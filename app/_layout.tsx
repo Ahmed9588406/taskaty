@@ -60,6 +60,7 @@ const IntialLayout = () =>{
     <SupabaseProvider>
       <Stack>
         <Stack.Screen name="index" options={{headerShown:false}}/>
+        <Stack.Screen name="(authenticated)" options={{headerShown:false}} />
       </Stack>
     </SupabaseProvider>
   );
