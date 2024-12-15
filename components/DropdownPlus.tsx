@@ -1,29 +1,73 @@
-import React, { useState } from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
+import { TouchableOpacity, View, Text, Modal, TouchableWithoutFeedback } from "react-native";
+import DropdownMenu from "@zeego/dropdown-menu";
 
-function DropdownPlus() {
-    const [isOpen, setIsOpen] = useState(false);
+const DropdownPlus = () => {
+  const [visible, setVisible] = useState(false);
 
-    return (
-        <View>
-            <TouchableOpacity style={styles.plusButton} onPress={() => setIsOpen(!isOpen)}>
-                <Text style={styles.buttonText}>+</Text>
-            </TouchableOpacity>
-            {/* Rest of the component */}
-        </View>
-    );
-}
+  // Options to display in the dropdown menu
+  const options = ["Option 1", "Option 2", "Option 3"];
 
-const styles = StyleSheet.create({
-    plusButton: {
-        backgroundColor: 'blue',
-        borderRadius: 5,
-        padding: 10,
-    },
-    buttonText: {
-        color: 'white',
-        fontSize: 20,
-    },
-});
+  const openMenu = () => setVisible(true);
+  const closeMenu = () => setVisible(false);
+
+  const handleOptionSelect = (option:string) => {
+    console.log(`Selected: ${option}`);
+    closeMenu();
+  };
+
+  return (
+    <View>
+      <TouchableOpacity
+        onPress={openMenu}
+        style={{
+          backgroundColor: "#0000FF",
+          padding: 10,
+          borderRadius: 50,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Ionicons name="add" size={32} color="white" />
+      </TouchableOpacity>
+
+      {/* Dropdown Modal */}
+      {visible && (
+        <Modal transparent animationType="fade" visible={visible}>
+          <TouchableWithoutFeedback onPress={closeMenu}>
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(0,0,0,0.5)",
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: "white",
+                  padding: 20,
+                  borderRadius: 10,
+                  width: 200,
+                }}
+              >
+                {options.map((option, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleOptionSelect(option)}
+                    style={{ paddingVertical: 10 }}
+                  >
+                    <Text style={{ fontSize: 18 }}>{option}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+      )}
+    </View>
+  );
+};
 
 export default DropdownPlus;
