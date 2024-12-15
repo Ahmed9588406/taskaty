@@ -1,3 +1,4 @@
+import DropdownPlus from '@/components/DropdownPlus';
 import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
@@ -20,35 +21,10 @@ const Layout = () => {
               source={require('@/assets/images/trello-logo-gradient-white.png')}
             />
           ),
+          headerRight:() => <DropdownPlus />
         }}
       />
-      <Stack.Screen
-        name="new-board"
-        options={{
-          headerShown: false,
-          presentation: 'modal',
-        }}
-      />
-
-      <Stack.Screen
-        name="templates"
-        options={{
-          title: 'Start with a template',
-          presentation: 'fullScreenModal',
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={{
-                backgroundColor: '#E3DFE9',
-                borderRadius: 16,
-                padding: 6,
-              }}>
-              <Ionicons name="close" size={18} color={'#716E75'} />
-            </TouchableOpacity>
-          ),
-        }}
-      />
-    </Stack>
+     </Stack>
   );
 };
 export default Layout;
