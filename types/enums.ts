@@ -52,3 +52,9 @@ export enum ModalType {
     id: string;
     username: null;
   }
+  export type RootStackParamList = {
+    Home: undefined;
+    Board: '(authenticated)/(tabs)/boards/new-board';
+    Option2: undefined;
+    Option3: undefined;
+  };
