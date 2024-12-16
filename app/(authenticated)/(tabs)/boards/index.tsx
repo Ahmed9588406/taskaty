@@ -24,7 +24,7 @@ const Page = () => {
 
   const ListItem = ({ item }: { item: Board }) => (
     <Link
-      href={`/(authenticated)/(tabs)/boards/${item.id}`}
+      href={`/(authenticated)/(tabs)/boards/${item.id}?bg=${encodeURIComponent(item.background)}`}
       style={styles.listItem}
       key={`${item.id}`}
       asChild>
