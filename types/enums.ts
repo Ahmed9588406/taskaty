@@ -17,6 +17,7 @@ export enum ModalType {
     created_at: string;
     background: string;
     last_edit: null;
+    users?:any;
   }
   
   export interface TaskList {
