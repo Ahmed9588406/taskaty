@@ -8,6 +8,7 @@ const Layout = () => {
   return (<Stack>
     <Stack.Screen name='index' options={{
       title:'Board',
+      headerTitleAlign:'center',
       headerShadowVisible: false,
       headerStyle: {
         backgroundColor: DefaultTheme.colors.background
@@ -19,7 +20,7 @@ const Layout = () => {
       )
     }} />
 
-    <Stack.Screen name='color-select' options={{title: 'Select a color'}} />
+    <Stack.Screen name='color-select' options={{title: 'اختر نوع المهمة',headerTitleAlign:'center',}} />
   </Stack>
   )
 }
