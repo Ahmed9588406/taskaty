@@ -2,8 +2,8 @@ import { createContext, useContext, useEffect } from 'react';
 import { client } from '@/utils/supabaseClient';
 import { useAuth } from '@clerk/clerk-expo';
 import { Board, Task, TaskList } from '@/types/enums';
-//import { decode } from 'base64-arraybuffer';
 import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 export const BOARDS_TABLE = 'boards';
 export const USER_BOARDS_TABLE = 'user_boards';
@@ -12,7 +12,8 @@ export const CARDS_TABLE = 'cards';
 export const USERS_TABLE = 'users';
 export const FILES_BUCKET = 'files';
 
-type ProviderProps = {
+export interface ProviderProps {
+  supabase: SupabaseClient;
   userId: string | null;
   createBoard: (title: string, background: string) => Promise<any>;
   getBoards: () => Promise<any>;
@@ -42,24 +43,21 @@ type ProviderProps = {
     id: string,
     handleRealtimeChanges: (update: RealtimePostgresChangesPayload<any>) => void
   ) => any;
-  uploadFile: (
-    filePath: string,
-    base64: string,
-    contentType: string
-  ) => Promise<string | undefined>;
   getFileFromPath: (path: string) => Promise<string | undefined>;
   setUserPushToken: (token: string) => Promise<any>;
   getUserCards: (userId: string) => Promise<any>;
-};
+}
 
-const SupabaseContext = createContext<Partial<ProviderProps>>({});
+export const SupabaseContext = createContext<ProviderProps | null>(null);
 
 export function useSupabase() {
   return useContext(SupabaseContext);
 }
 
-export const SupabaseProvider = ({ children }: any) => {
-  const { userId } = useAuth();
+export const SupabaseProvider = ({ children }: { children: React.ReactNode }) => {
+  const { userId: clerkUserId } = useAuth();
+  // Ensure userId is either string or null, not undefined
+  const userId = clerkUserId ?? null;
 
   useEffect(() => {
     setRealtimeAuth();
@@ -119,7 +117,6 @@ export const SupabaseProvider = ({ children }: any) => {
     return await client.from(BOARDS_TABLE).delete().match({ id });
   };
 
-  // CRUD Lists
   const getBoardLists = async (boardId: string) => {
     const lists = await client
       .from(LISTS_TABLE)
@@ -153,7 +150,6 @@ export const SupabaseProvider = ({ children }: any) => {
     return await client.from(LISTS_TABLE).delete().match({ id: id });
   };
 
-  // CRUD Cards
   const addListCard = async (
     listId: string,
     boardId: string,
@@ -260,16 +256,6 @@ export const SupabaseProvider = ({ children }: any) => {
       .subscribe();
   };
 
-  /*
-  const uploadFile = async (filePath: string, base64: string, contentType: string) => {
-    const { data } = await client.storage
-      .from(FILES_BUCKET)
-      .upload(filePath, decode(base64), { contentType });
-
-    return data?.path;
-  };
-  */
-
   const getFileFromPath = async (path: string) => {
     const { data } = await client.storage.from(FILES_BUCKET).createSignedUrl(path, 60 * 60, {
       transform: {
@@ -294,19 +280,20 @@ export const SupabaseProvider = ({ children }: any) => {
 
   const getUserCards = async (userId: string) => {
     const { data, error } = await client
-        .from('cards')
-        .select('*, boards(*), lists(*)')
-        .eq('assigned_to', userId);
+      .from('cards')
+      .select('*, boards(*), lists(*)')
+      .eq('assigned_to', userId);
 
     if (error) {
-        console.error('Error fetching cards:', error);
-        return [];
+      console.error('Error fetching cards:', error);
+      return [];
     }
 
     return data || [];
   };
 
-  const value = {
+  const value: ProviderProps = {
+    supabase: client,
     userId,
     createBoard,
     getBoards,
@@ -327,7 +314,6 @@ export const SupabaseProvider = ({ children }: any) => {
     addUserToBoard,
     getBoardMember,
     getRealtimeCardSubscription,
-   // uploadFile,
     getFileFromPath,
     setUserPushToken,
     getUserCards,
