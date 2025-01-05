@@ -1,27 +1,39 @@
-import {Stack, useRouter} from 'expo-router'
-import { DefaultTheme } from '@react-navigation/native'
-import { TouchableOpacity } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
-import { Colors } from '@/constants/Colors'
-const Layout = () => {
-  const router = useRouter()
-  return (<Stack>
-    <Stack.Screen name='index' options={{
-      title:'Board',
-      headerTitleAlign:'center',
-      headerShadowVisible: false,
-      headerStyle: {
-        backgroundColor: DefaultTheme.colors.background
-      },
-      headerLeft: ()=> (
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name='close' size={26} color={Colors.primary} />
-        </TouchableOpacity>
-      )
-    }} />
+import { Colors } from '@/constants/Colors';
+import { Ionicons } from '@expo/vector-icons';
+import { DefaultTheme } from '@react-navigation/native';
+import { Stack, useRouter } from 'expo-router';
+import { TouchableOpacity } from 'react-native';
 
-    <Stack.Screen name='color-select' options={{title: 'اختر نوع المهمة',headerTitleAlign:'center',}} />
-  </Stack>
-  )
-}
-export default Layout
+const Layout = () => {
+  const router = useRouter();
+  return (
+    <Stack>
+      <Stack.Screen
+        name="index"
+        options={{
+          title: 'Board',
+          headerShadowVisible: false,
+          headerStyle: {
+            backgroundColor: DefaultTheme.colors.background,
+          },
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.back()}>
+              <Ionicons name="close" size={26} color={Colors.primary} />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+      <Stack.Screen
+        name="color-select"
+        options={{
+          title: 'Booard Background',
+          headerShadowVisible: false,
+          headerStyle: {
+            backgroundColor: DefaultTheme.colors.background,
+          },
+        }}
+      />
+    </Stack>
+  );
+};
+export default Layout;

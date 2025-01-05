@@ -54,9 +54,11 @@ const Page = () => {
           <TouchableOpacity onPress={() => {}}>
             <Ionicons name="notifications-outline" size={26} color={Colors.fontLight} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.navigate(`/boards/settings?id=${id}`)}>
-            <MaterialCommunityIcons name="dots-horizontal" size={26} color={Colors.fontLight} />
-          </TouchableOpacity>
+          <Link href={`/(authenticated)/board/settings?id=${id}`} asChild>
+            <TouchableOpacity>
+              <MaterialCommunityIcons name="dots-horizontal" size={26} color={Colors.fontLight} />
+            </TouchableOpacity>
+          </Link>
         </View>
       </View>
     </BlurView>

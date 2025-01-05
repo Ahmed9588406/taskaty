@@ -24,12 +24,12 @@ const Page = () => {
 
   const ListItem = ({ item }: { item: Board }) => (
     <Link
-      href={`/(authenticated)/(tabs)/boards/${item.id}?bg=${encodeURIComponent(item.background)}`}
+      href={`/(authenticated)/board/${item.id}?bg=${encodeURIComponent(item.background)}`}
       style={styles.listItem}
       key={`${item.id}`}
       asChild>
       <TouchableOpacity>
-        <View style={[styles.colorBlock, { backgroundColor: item.background}]} />
+        <View style={[styles.colorBlock, { backgroundColor: item.background }]} />
         <Text style={{ fontSize: 16 }}>{item.title}</Text>
       </TouchableOpacity>
     </Link>
