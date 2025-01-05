@@ -11,7 +11,7 @@ const Page = () => {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { findUsers, addUserToBoard } = useSupabase();
   const router = useRouter();
-  const [search, setSearch] = useState('dan@gmail.com');
+  const [search, setSearch] = useState('');
   const [userList, setUserList] = useState<User[]>([]);
   const headerHeight = useHeaderHeight();
 
