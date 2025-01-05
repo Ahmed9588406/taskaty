@@ -21,7 +21,7 @@ const Page = () => {
 
   const onCreateBoard = async () => {
     await createBoard!(boardName, selectedColor);
-    router.push('/(authenticated)/(tabs)/boards');
+    router.dismiss();
   };
 
   return (
