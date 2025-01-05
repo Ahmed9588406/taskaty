@@ -38,6 +38,7 @@ const Layout = () => {
         options={{
           presentation: 'modal',
           title: 'Manage board members',
+          headerTitleAlign : 'center',
           headerLeft: () => (
             <TouchableOpacity
               onPress={() => router.back()}
