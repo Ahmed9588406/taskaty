@@ -1,7 +1,7 @@
 import { useSupabase } from '@/context/SupabaseContext';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { View, Text, FlatList, Image, TouchableOpacity } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DefaultTheme } from '@react-navigation/native';
 import { User } from '@/types/enums';
 import { useHeaderHeight } from '@react-navigation/elements';
@@ -14,10 +14,30 @@ const Page = () => {
   const [search, setSearch] = useState('');
   const [userList, setUserList] = useState<User[]>([]);
   const headerHeight = useHeaderHeight();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const onSearchUSer = async () => {
-    const data = await findUsers!(search);
-    setUserList(data);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (search) {
+        searchUsers();
+      } else {
+        setUserList([]);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const searchUsers = async () => {
+    setIsLoading(true);
+    try {
+      const data = await findUsers!(search);
+      setUserList(data);
+    } catch (error) {
+      console.error('Search failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const onAddUser = async (user: User) => {
@@ -41,7 +61,7 @@ const Page = () => {
             placeholder: 'Invite by name, username or email',
             cancelButtonText: 'Done',
             onChangeText: (e) => setSearch(e.nativeEvent.text),
-            onCancelButtonPress: onSearchUSer,
+            onCancelButtonPress: () => router.dismiss(),
           },
         }}
       />
@@ -51,6 +71,13 @@ const Page = () => {
         renderItem={(item) => <UserListItem onPress={onAddUser} element={item} />}
         style={{ marginTop: 60 + headerHeight }}
         contentContainerStyle={{ gap: 8 }}
+        ListEmptyComponent={
+          search ? (
+            <Text style={{ textAlign: 'center', marginTop: 20 }}>
+              {isLoading ? 'Searching...' : 'No users found'}
+            </Text>
+          ) : null
+        }
       />
     </View>
   );
