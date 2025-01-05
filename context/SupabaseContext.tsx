@@ -49,6 +49,7 @@ type ProviderProps = {
   ) => Promise<string | undefined>;
   getFileFromPath: (path: string) => Promise<string | undefined>;
   setUserPushToken: (token: string) => Promise<any>;
+  getUserCards: (userId: string) => Promise<any>;
 };
 
 const SupabaseContext = createContext<Partial<ProviderProps>>({});
@@ -291,6 +292,20 @@ export const SupabaseProvider = ({ children }: any) => {
     return data;
   };
 
+  const getUserCards = async (userId: string) => {
+    const { data, error } = await client
+        .from('cards')
+        .select('*, boards(*), lists(*)')
+        .eq('assigned_to', userId);
+
+    if (error) {
+        console.error('Error fetching cards:', error);
+        return [];
+    }
+
+    return data || [];
+  };
+
   const value = {
     userId,
     createBoard,
@@ -315,6 +330,7 @@ export const SupabaseProvider = ({ children }: any) => {
    // uploadFile,
     getFileFromPath,
     setUserPushToken,
+    getUserCards,
   };
 
   return <SupabaseContext.Provider value={value}>{children}</SupabaseContext.Provider>;
