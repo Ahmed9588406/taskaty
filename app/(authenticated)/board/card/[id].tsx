@@ -28,11 +28,11 @@ const Page = () => {
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => ['60%'], []);
 
-  const { getCardInfo, getBoardMember, getFileFromPath, updateCard, assignCard } = useSupabase();
+  const { getCardInfo, getFileFromPath, updateCard, assignCard, findUsers } = useSupabase();
 
   const router = useRouter();
   const [card, setCard] = useState<Task>();
-  const [member, setMember] = useState<User[]>();
+  const [users, setUsers] = useState<User[]>([]);
   const [imagePath, setImagePath] = useState<string>('');
 
   if (card?.image_url) {
@@ -55,9 +55,8 @@ const Page = () => {
     console.log('🚀 ~ loadInfo ~ cardData:', data);
     setCard(data);
 
-    const member = await getBoardMember!(data.board_id);
-    console.log('🚀 ~ loadInfo ~ member:', member);
-    setMember(member);
+    const userData = await findUsers!('');
+    setUsers(userData.filter(Boolean));
   };
 
   const saveAndClose = () => {
@@ -169,9 +168,11 @@ const Page = () => {
             </View>
             <View style={{ backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 8 }}>
               <FlatList
-                data={member}
-                keyExtractor={(item) => `${item.id}`}
-                renderItem={(item) => <UserListItem onPress={onAssignUser} element={item} />}
+                data={users}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={(props) => (
+                  <UserListItem element={props} onPress={onAssignUser} />
+                )}
                 contentContainerStyle={{ gap: 8 }}
               />
             </View>

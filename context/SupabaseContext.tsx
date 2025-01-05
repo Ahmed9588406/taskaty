@@ -212,9 +212,18 @@ export const SupabaseProvider = ({ children }: any) => {
   };
 
   const findUsers = async (search: string) => {
-    // Use the search_users stored procedure to find users by email
-    const { data } = await client.rpc('search_users', { search: search });
-    return data;
+    const { data, error } = await client
+      .from(USERS_TABLE)
+      .select('*')
+      .ilike('email', `%${search}%`)
+      .order('email');
+      
+    if (error) {
+      console.error('Error fetching users:', error);
+      return [];
+    }
+      
+    return data || [];
   };
 
   const addUserToBoard = async (boardId: string, userId: string) => {
