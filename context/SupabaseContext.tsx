@@ -4,6 +4,7 @@ import { useAuth } from '@clerk/clerk-expo';
 import { Board, Task, TaskList } from '@/types/enums';
 import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { SupabaseClient } from '@supabase/supabase-js';
+import { decode } from 'base64-arraybuffer'; // Add this import
 
 export const BOARDS_TABLE = 'boards';
 export const USER_BOARDS_TABLE = 'user_boards';
@@ -46,6 +47,7 @@ export interface ProviderProps {
   getFileFromPath: (path: string) => Promise<string | undefined>;
   setUserPushToken: (token: string) => Promise<any>;
   getUserCards: (userId: string) => Promise<any>;
+  uploadFile: (filePath: string, base64: string, contentType: string) => Promise<string | undefined>;
 }
 
 export const SupabaseContext = createContext<ProviderProps | null>(null);
@@ -208,19 +210,100 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
     return data;
   };
 
+  interface ClerkUser {
+    id: string;
+    firstName: string;
+    lastName: string;
+    imageUrl: string;
+    emailAddresses: { emailAddress: string }[];
+    username: string;
+  }
+
   const findUsers = async (search: string) => {
-    const { data, error } = await client
-      .from(USERS_TABLE)
-      .select('*')
-      .ilike('email', `%${search}%`)
-      .order('email');
-      
-    if (error) {
+    try {
+      // Fetch from Supabase with correct schema
+      const { data: supabaseUsers, error } = await client
+        .from(USERS_TABLE)
+        .select('id, email, first_name, username, avatar_url')
+        .or(`email.ilike.%${search}%,first_name.ilike.%${search}%,username.ilike.%${search}%`)
+        .order('first_name')
+        .limit(20);
+        
+      if (error) throw error;
+  
+      // Transform Supabase users to match the interface
+      const transformedSupabaseUsers = (supabaseUsers || []).map(user => ({
+        id: user.id,
+        email: user.email || '',
+        full_name: user.first_name || '', // Using just first_name as per schema
+        username: user.username || '',
+        avatar_url: user.avatar_url,
+        isClerkUser: false
+      }));
+  
+      try {
+        // Get current session token for Clerk API
+        const token = await window.Clerk?.session?.getToken();
+        
+        if (!token) {
+          console.log('No Clerk session token available');
+          return transformedSupabaseUsers;
+        }
+  
+        // Fetch from Clerk with proper authentication
+        const clerkResponse = await fetch(
+          'https://api.clerk.dev/v1/users',
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+  
+        if (!clerkResponse.ok) {
+          console.error('Clerk API error:', await clerkResponse.text());
+          return transformedSupabaseUsers;
+        }
+  
+        const clerkUsers: ClerkUser[] = await clerkResponse.json();
+        
+        // Filter Clerk users based on search
+        const filteredClerkUsers = clerkUsers.filter(user => {
+          const searchLower = search.toLowerCase();
+          return (
+            user.firstName?.toLowerCase().includes(searchLower) ||
+            user.lastName?.toLowerCase().includes(searchLower) ||
+            user.emailAddresses[0]?.emailAddress.toLowerCase().includes(searchLower) ||
+            user.username?.toLowerCase().includes(searchLower)
+          );
+        });
+  
+        // Transform Clerk users
+        const transformedClerkUsers = filteredClerkUsers.map(user => ({
+          id: user.id,
+          email: user.emailAddresses[0]?.emailAddress || '',
+          full_name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+          username: user.username || '',
+          avatar_url: user.imageUrl,
+          isClerkUser: true
+        }));
+  
+        // Merge and remove duplicates based on email
+        const allUsers = [...transformedSupabaseUsers, ...transformedClerkUsers];
+        const uniqueUsers = Array.from(new Map(allUsers.map(user => [user.email, user])).values());
+        
+        return uniqueUsers;
+      } catch (clerkError) {
+        console.error('Error fetching Clerk users:', clerkError);
+        // Return only Supabase users if Clerk fetch fails
+        return transformedSupabaseUsers;
+      }
+    } catch (error) {
       console.error('Error fetching users:', error);
       return [];
     }
-      
-    return data || [];
   };
 
   const addUserToBoard = async (boardId: string, userId: string) => {
@@ -292,6 +375,14 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
     return data || [];
   };
 
+  const uploadFile = async (filePath: string, base64: string, contentType: string) => {
+    const { data } = await client.storage
+      .from(FILES_BUCKET)
+      .upload(filePath, decode(base64), { contentType });
+
+    return data?.path;
+  };
+
   const value: ProviderProps = {
     supabase: client,
     userId,
@@ -317,6 +408,7 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
     getFileFromPath,
     setUserPushToken,
     getUserCards,
+    uploadFile,
   };
 
   return <SupabaseContext.Provider value={value}>{children}</SupabaseContext.Provider>;
