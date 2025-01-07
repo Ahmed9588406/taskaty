@@ -5,6 +5,15 @@ import { Board, Task, TaskList } from '@/types/enums';
 import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { decode } from 'base64-arraybuffer'; // Add this import
+import { createClient } from '@supabase/supabase-js';
+
+interface User {
+  id: string;
+  email: string;
+  first_name: string;
+  username?: string;
+  avatar_url?: string;
+}
 
 export const BOARDS_TABLE = 'boards';
 export const USER_BOARDS_TABLE = 'user_boards';
@@ -212,29 +221,23 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
 
   const findUsers = async (search: string) => {
     try {
-      // Fetch from Supabase with correct schema
-      const { data: supabaseUsers, error } = await client
+      if (!search.trim()) return [];
+
+      const { data, error } = await client
         .from(USERS_TABLE)
         .select('id, email, first_name, username, avatar_url')
         .or(`email.ilike.%${search}%,first_name.ilike.%${search}%,username.ilike.%${search}%`)
         .order('first_name')
         .limit(20);
-        
-      if (error) throw error;
-  
-      // Transform Supabase users to match the interface
-      const transformedUsers = (supabaseUsers || []).map(user => ({
-        id: user.id,
-        email: user.email || '',
-        full_name: user.first_name || '',
-        username: user.username || '',
-        avatar_url: user.avatar_url,
-        isClerkUser: false
-      }));
-      
-      return transformedUsers;
+
+      if (error) {
+        console.error('Error searching users:', error);
+        return [];
+      }
+
+      return data || [];
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('Error in findUsers:', error);
       return [];
     }
   };
@@ -295,18 +298,23 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
   };
 
   const getUserCards = async (userId: string) => {
-    const { data, error } = await client
-      .from('cards')
-      .select('*, boards(*), lists(*)')
-      .eq('assigned_to', userId);
+    try {
+        const { data, error } = await client
+            .from('cards')
+            .select('*, boards(*), lists(*)')
+            .eq('assigned_to', userId);
 
-    if (error) {
-      console.error('Error fetching cards:', error);
-      return [];
+        if (error) {
+            console.error('Error fetching cards:', error);
+            return [];
+        }
+
+        return data || [];
+    } catch (error) {
+        console.error('Error processing cards:', error);
+        return [];
     }
-
-    return data || [];
-  };
+};
 
   const uploadFile = async (filePath: string, base64: string, contentType: string) => {
     const { data } = await client.storage
