@@ -46,7 +46,7 @@ export interface ProviderProps {
   assignCard: (cardId: string, userId: string) => Promise<any>;
   deleteCard: (id: string) => Promise<any>;
   getCardInfo: (id: string) => Promise<any>;
-  findUsers: (search: string) => Promise<any>;
+  findUsers: (boardId: string) => Promise<any>;
   addUserToBoard: (boardId: string, userId: string) => Promise<any>;
   getBoardMember: (boardId: string) => Promise<any>;
   getRealtimeCardSubscription: (
@@ -219,23 +219,21 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
     return data;
   };
 
-  const findUsers = async (search: string) => {
+  const findUsers = async (boardId: string) => {
     try {
-      if (!search.trim()) return [];
-
       const { data, error } = await client
-        .from(USERS_TABLE)
-        .select('id, email, first_name, username, avatar_url')
-        .or(`email.ilike.%${search}%,first_name.ilike.%${search}%,username.ilike.%${search}%`)
-        .order('first_name')
-        .limit(20);
-
+        .from(USER_BOARDS_TABLE)
+        .select('users ( id, email, first_name, username, avatar_url )')
+        .eq('board_id', boardId);
+  
       if (error) {
-        console.error('Error searching users:', error);
+        console.error('Error fetching board users:', error);
         return [];
       }
-
-      return data || [];
+  
+      // Extract users from the response
+      const users = data?.map(item => item.users).filter(Boolean);
+      return users || [];
     } catch (error) {
       console.error('Error in findUsers:', error);
       return [];
