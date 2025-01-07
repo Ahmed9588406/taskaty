@@ -21,6 +21,7 @@ import {
 } from '@gorhom/bottom-sheet';
 import { DefaultTheme } from '@react-navigation/native';
 import UserListItem from '@/components/UserListItem';
+import React from 'react';
 
 const Page = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -28,7 +29,11 @@ const Page = () => {
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => ['60%'], []);
 
-  const { getCardInfo, getFileFromPath, updateCard, assignCard, findUsers } = useSupabase();
+  const supabase = useSupabase();
+  if (!supabase) {
+    throw new Error('Supabase context is not available');
+  }
+  const { getCardInfo, getFileFromPath, updateCard, assignCard, findUsers } = supabase;
 
   const router = useRouter();
   const [card, setCard] = useState<Task>();
