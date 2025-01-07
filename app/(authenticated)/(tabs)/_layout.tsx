@@ -54,15 +54,6 @@ const Layout = () => {
         }}
       />
       <Tabs.Screen
-        name="notifications"
-        options={{
-          title: 'Notifications',
-          tabBarIcon: ({ size, color }) => (
-            <Ionicons name="notifications-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="account"
         options={{
           title: 'Account',
