@@ -42,6 +42,7 @@ const Page = () => {
   const [imagePath, setImagePath] = useState<string>('');
   const [isEditing, setIsEditing] = useState(false);
   const [tempDescription, setTempDescription] = useState('');
+  const [boardId, setBoardId] = useState<string>('');
 
   if (card?.image_url) {
     getFileFromPath!(card.image_url).then((path) => {
@@ -62,9 +63,14 @@ const Page = () => {
     const data = await getCardInfo!(id);
     console.log('🚀 ~ loadInfo ~ cardData:', data);
     setCard(data);
-
-    const userData = await findUsers!('');
-    setUsers(userData.filter(Boolean));
+    
+    // Set the boardId from the card data
+    if (data?.board_id) {
+      setBoardId(data.board_id);
+      // Fetch users specific to this board
+      const userData = await findUsers!(data.board_id);
+      setUsers(userData.filter(Boolean));
+    }
   };
 
   const saveAndClose = () => {
@@ -261,14 +267,18 @@ const Page = () => {
               <Button title="Cancel" onPress={() => bottomSheetModalRef.current?.close()} />
             </View>
             <View style={{ backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 8 }}>
-              <FlatList
-                data={users}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={(props) => (
-                  <UserListItem element={props} onPress={onAssignUser} />
-                )}
-                contentContainerStyle={{ gap: 8 }}
-              />
+              {users.length > 0 ? (
+                <FlatList
+                  data={users}
+                  keyExtractor={(item) => item.id.toString()}
+                  renderItem={(props) => (
+                    <UserListItem element={props} onPress={onAssignUser} />
+                  )}
+                  contentContainerStyle={{ gap: 8 }}
+                />
+              ) : (
+                <Text style={styles.noUsersText}>No users found in this board</Text>
+              )}
             </View>
           </View>
         </BottomSheetModal>
@@ -343,6 +353,11 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: '#fff',
     fontWeight: '500',
+  },
+  noUsersText: {
+    textAlign: 'center',
+    padding: 16,
+    color: Colors.grey,
   },
 });
 export default Page;
