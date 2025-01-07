@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, FlatList, Pressable, Modal } from "react-native";
+import Toast from 'react-native-toast-message';
 import { useSupabase } from "@/context/SupabaseContext";
 import { useEffect, useState } from "react";
 import { Board, Task, TaskList } from "@/types/enums";
@@ -43,6 +44,32 @@ const Page = () => {
         return "In Progress";
     };
 
+    const showToast = (status: 'done' | 'in_progress' | 'delayed') => {
+        const toastConfig = {
+            done: {
+                type: 'success',
+                text1: 'Task Completed',
+                text2: 'Great job! Task marked as done',
+                position: 'bottom',
+            },
+            in_progress: {
+                type: 'info',
+                text1: 'Task In Progress',
+                text2: 'Task is now in active progress',
+                position: 'bottom' as Toast.ToastPosition,
+            },
+            delayed: {
+                type: 'error',
+                text1: 'Task Delayed',
+                text2: 'Task has been marked as delayed',
+                position: 'bottom',
+            },
+        };
+
+        const config = toastConfig[status];
+        Toast.show(config);
+    };
+
     const handleStatusChange = async (newStatus: 'done' | 'in_progress' | 'delayed') => {
         if (!selectedTask) return;
         
@@ -64,9 +91,7 @@ const Page = () => {
             )
         );
 
-        // TODO: Update the task in Supabase database
-        // Add your Supabase update logic here
-
+        showToast(newStatus);
         setSelectedTask(null);
     };
 
@@ -146,6 +171,7 @@ const Page = () => {
                 showsVerticalScrollIndicator={false}
             />
             {renderTaskModal()}
+            <Toast />
         </View>
     );
 };
@@ -242,6 +268,14 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         flex: 1,
         marginHorizontal: 4,
+        elevation: 2, // Add shadow for Android
+        shadowColor: '#000', // Add shadow for iOS
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.22,
+        shadowRadius: 2.22,
     },
     statusButtonText: {
         color: 'white',
