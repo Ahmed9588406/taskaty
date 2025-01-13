@@ -46,13 +46,7 @@ const Layout = () => {
           ),
         }}
       />
-      <Tabs.Screen
-        name="search"
-        options={{
-          title: 'Search',
-          tabBarIcon: ({ size, color }) => <Ionicons name="search" size={size} color={color} />,
-        }}
-      />
+      
       <Tabs.Screen
         name="account"
         options={{

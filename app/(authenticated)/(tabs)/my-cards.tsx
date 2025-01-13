@@ -1,5 +1,4 @@
-import { View, Text, StyleSheet, FlatList, Pressable, Modal, Image } from "react-native";
-import Toast from 'react-native-toast-message';
+import { View, Text, StyleSheet, FlatList, Pressable, Modal } from "react-native";
 import { useSupabase } from "@/context/SupabaseContext";
 import { useEffect, useState } from "react";
 import { Board, Task, TaskList } from "@/types/enums";
@@ -9,33 +8,27 @@ interface TaskWithRelations extends Task {
     due_date: string | null;
     boards?: Board;
     lists?: TaskList;
-    image_url?: string;
-    signedImageUrl?: string; // Add this property
 }
 
 const Page = () => {
-    const { userId, getUserCards } = useSupabase();
+    const { userId, getUserCards } = useSupabase(); // No more TypeScript errors
     const [tasks, setTasks] = useState<TaskWithRelations[]>([]);
     const [selectedTask, setSelectedTask] = useState<TaskWithRelations | null>(null);
 
+    // Fetch user cards when the component mounts
     useEffect(() => {
-        loadUserCards();
+        if (userId) {
+            fetchUserCards();
+        }
     }, [userId]);
 
-    const loadUserCards = async () => {
-        if (!userId || !getUserCards) return;
-        const data = await getUserCards(userId);
-        // Add signed URLs to the tasks
-        const tasksWithImages = await Promise.all(
-            data.map(async (task) => {
-                if (task.image_url) {
-                    const signedUrl = await getFileFromPath!(task.image_url);
-                    return { ...task, signedImageUrl: signedUrl };
-                }
-                return task;
-            })
-        );
-        setTasks(tasksWithImages);
+    const fetchUserCards = async () => {
+        try {
+            const cards = await getUserCards(userId!);
+            setTasks(cards);
+        } catch (error) {
+            console.error('Error fetching user cards:', error);
+        }
     };
 
     const getStatusColor = (task: TaskWithRelations) => {
@@ -55,32 +48,6 @@ const Page = () => {
             return "Delayed";
         }
         return "In Progress";
-    };
-
-    const showToast = (status: 'done' | 'in_progress' | 'delayed') => {
-        const toastConfig = {
-            done: {
-                type: 'success',
-                text1: 'Task Completed',
-                text2: 'Great job! Task marked as done',
-                position: 'bottom',
-            },
-            in_progress: {
-                type: 'info',
-                text1: 'Task In Progress',
-                text2: 'Task is now in active progress',
-                position: 'bottom'
-            },
-            delayed: {
-                type: 'error',
-                text1: 'Task Delayed',
-                text2: 'Task has been marked as delayed',
-                position: 'bottom',
-            },
-        };
-
-        const config = toastConfig[status];
-        Toast.show(config);
     };
 
     const handleStatusChange = async (newStatus: 'done' | 'in_progress' | 'delayed') => {
@@ -104,7 +71,9 @@ const Page = () => {
             )
         );
 
-        showToast(newStatus);
+        // TODO: Update the task in Supabase database
+        // Add your Supabase update logic here
+
         setSelectedTask(null);
     };
 
@@ -164,15 +133,8 @@ const Page = () => {
                 </View>
             </View>
             <Text style={styles.cardTitle}>{item.title}</Text>
-            {item.signedImageUrl && (
-                <Image
-                    source={{ uri: item.signedImageUrl }}
-                    style={styles.cardImage}
-                    resizeMode="cover"
-                />
-            )}
             {item.description && (
-                <Text style={[styles.description, item.signedImageUrl && styles.descriptionWithImage]}>
+                <Text style={styles.description}>
                     {item.description}
                 </Text>
             )}
@@ -182,7 +144,6 @@ const Page = () => {
 
     return (
         <View style={styles.container}>
-            
             <FlatList
                 data={tasks}
                 renderItem={renderCard}
@@ -191,7 +152,6 @@ const Page = () => {
                 showsVerticalScrollIndicator={false}
             />
             {renderTaskModal()}
-            <Toast />
         </View>
     );
 };
@@ -245,16 +205,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginBottom: 8,
     },
-    cardImage: {
-        width: '100%',
-        height: 200, // Made taller
-        borderRadius: 8,
-        marginVertical: 8,
-        backgroundColor: '#f0f0f0', // Add placeholder color
-    },
-    descriptionWithImage: {
-        marginTop: 8,
-    },
     description: {
         fontSize: 14,
         color: Colors.grey,
@@ -298,14 +248,6 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         flex: 1,
         marginHorizontal: 4,
-        elevation: 2, // Add shadow for Android
-        shadowColor: '#000', // Add shadow for iOS
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.22,
-        shadowRadius: 2.22,
     },
     statusButtonText: {
         color: 'white',
