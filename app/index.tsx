@@ -22,7 +22,7 @@ export default function Index() {
   const [authType, setAuthType] = useState<ModalType | null>(null);
 
   const openLink = async () => {
-    WebBrowser.openBrowserAsync('https://galaxies.dev');
+    WebBrowser.openBrowserAsync('');
   };
 
   const openActionSheet = async () => {
