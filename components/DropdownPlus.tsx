@@ -37,7 +37,6 @@ const DropdownPlus = () => {
                 >
                   <View style={{ width: 300, backgroundColor: 'white', borderRadius: 10, padding: 20 }}>
                     <Button title="Create a board" onPress={() => {router.push('/(authenticated)/(tabs)/boards/new-board'); closeMenu()}} />
-                    <Button title="Create a Card" onPress={() => {router.push('/(authenticated)/(tabs)/card'); closeMenu()}} />
                     {/*<Button title="Browse Templates" onPress={() => {router.push('/(authenticated)/(tabs)/boards/templates'); closeMenu()}}/>*/}
                     <Button title="Close" onPress={closeMenu} />
                   </View>

@@ -41,7 +41,8 @@
           "cameraPermission": "The app accesses your camera to let you take photos.",
           "microphonePermission": "The app accesses your microphone to let you record audio."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
