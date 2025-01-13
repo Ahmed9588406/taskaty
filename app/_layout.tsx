@@ -6,9 +6,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Text } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { SupabaseProvider } from '@/context/SupabaseContext';
+import Toast, { BaseToastProps } from 'react-native-toast-message';
 
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY as string;
 
@@ -28,6 +29,48 @@ const tokenCache = {
       return;
     }
   },
+};
+
+const toastConfig = {
+  success: (props: BaseToastProps) => (
+    <View style={{ 
+      height: 60,
+      width: '90%',
+      backgroundColor: '#4CAF50',
+      padding: 10,
+      borderRadius: 8,
+      marginBottom: 40
+    }}>
+      <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>{props.text1}</Text>
+      <Text style={{ color: 'white', fontSize: 14 }}>{props.text2}</Text>
+    </View>
+  ),
+  error: (props: BaseToastProps) => (
+    <View style={{ 
+      height: 60,
+      width: '90%',
+      backgroundColor: '#F44336',
+      padding: 10,
+      borderRadius: 8,
+      marginBottom: 40
+    }}>
+      <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>{props.text1}</Text>
+      <Text style={{ color: 'white', fontSize: 14 }}>{props.text2}</Text>
+    </View>
+  ),
+  info: (props: BaseToastProps) => (
+    <View style={{ 
+      height: 60,
+      width: '90%',
+      backgroundColor: Colors.primary,
+      padding: 10,
+      borderRadius: 8,
+      marginBottom: 40
+    }}>
+      <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>{props.text1}</Text>
+      <Text style={{ color: 'white', fontSize: 14 }}>{props.text2}</Text>
+    </View>
+  ),
 };
 
 const InitialLayout = () => {
@@ -72,6 +115,7 @@ const RootLayoutNav = () => {
       <ActionSheetProvider>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <InitialLayout />
+          <Toast config={toastConfig} />
         </GestureHandlerRootView>
       </ActionSheetProvider>
     </ClerkProvider>

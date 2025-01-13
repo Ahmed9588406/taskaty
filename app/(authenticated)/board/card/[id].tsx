@@ -22,6 +22,7 @@ import {
 import { DefaultTheme } from '@react-navigation/native';
 import UserListItem from '@/components/UserListItem';
 import React from 'react';
+import Toast from 'react-native-toast-message';
 
 const Page = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -39,6 +40,9 @@ const Page = () => {
   const [card, setCard] = useState<Task>();
   const [users, setUsers] = useState<User[]>([]);
   const [imagePath, setImagePath] = useState<string>('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [tempDescription, setTempDescription] = useState('');
+  const [boardId, setBoardId] = useState<string>('');
 
   if (card?.image_url) {
     getFileFromPath!(card.image_url).then((path) => {
@@ -59,9 +63,14 @@ const Page = () => {
     const data = await getCardInfo!(id);
     console.log('🚀 ~ loadInfo ~ cardData:', data);
     setCard(data);
-
-    const userData = await findUsers!('');
-    setUsers(userData.filter(Boolean));
+    
+    // Set the boardId from the card data
+    if (data?.board_id) {
+      setBoardId(data.board_id);
+      // Fetch users specific to this board
+      const userData = await findUsers!(data.board_id);
+      setUsers(userData.filter(Boolean));
+    }
   };
 
   const saveAndClose = () => {
@@ -79,6 +88,61 @@ const Page = () => {
 
     setCard(data);
     bottomSheetModalRef.current?.close();
+  };
+
+  const handleSaveDescription = async () => {
+    try {
+      if (!card) return;
+      
+      await updateCard!({
+        ...card,
+        description: tempDescription
+      });
+      
+      setCard({ ...card, description: tempDescription });
+      setIsEditing(false);
+      
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Description saved successfully',
+        position: 'bottom',
+      });
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to save description',
+        position: 'bottom',
+      });
+    }
+  };
+
+  const saveDescription = async () => {
+    try {
+      if (!card) return;
+      
+      const { data, error } = await updateCard!({
+        ...card,
+        description: card.description
+      });
+      
+      if (error) throw error;
+      
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Description saved successfully',
+        position: 'bottom',
+      });
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to save description',
+        position: 'bottom',
+      });
+    }
   };
 
   const renderBackdrop = useCallback(
@@ -104,6 +168,11 @@ const Page = () => {
                 <Ionicons name="close" size={24} color={Colors.grey} />
               </TouchableOpacity>
             ),
+            headerRight: () => (
+              <TouchableOpacity onPress={saveDescription} style={styles.saveButton}>
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
+            ),
           }}
         />
         {card && (
@@ -116,12 +185,38 @@ const Page = () => {
                 onChangeText={(text: string) => setCard({ ...card, title: text })}></TextInput>
             )}
 
-            <TextInput
-              style={[styles.input, { minHeight: 100 }]}
-              value={card.description || ''}
-              multiline
-              placeholder="Add a description"
-              onChangeText={(text: string) => setCard({ ...card, description: text })}></TextInput>
+            <View style={styles.descriptionContainer}>
+              <TextInput
+                style={[styles.input, { minHeight: 100 }]}
+                value={isEditing ? tempDescription : card.description || ''}
+                multiline
+                placeholder="Add a description"
+                onChangeText={(text: string) => setTempDescription(text)}
+                onFocus={() => {
+                  setIsEditing(true);
+                  setTempDescription(card.description || '');
+                }}
+              />
+              {isEditing && (
+                <View style={styles.descriptionButtons}>
+                  <TouchableOpacity 
+                    style={[styles.descButton, styles.saveButton]} 
+                    onPress={handleSaveDescription}
+                  >
+                    <Text style={styles.saveButtonText}>Save</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.descButton, styles.cancelButton]}
+                    onPress={() => {
+                      setIsEditing(false);
+                      setTempDescription('');
+                    }}
+                  >
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
 
             {imagePath && (
               <>
@@ -172,17 +267,22 @@ const Page = () => {
               <Button title="Cancel" onPress={() => bottomSheetModalRef.current?.close()} />
             </View>
             <View style={{ backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 8 }}>
-              <FlatList
-                data={users}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={(props) => (
-                  <UserListItem element={props} onPress={onAssignUser} />
-                )}
-                contentContainerStyle={{ gap: 8 }}
-              />
+              {users.length > 0 ? (
+                <FlatList
+                  data={users}
+                  keyExtractor={(item) => item.id.toString()}
+                  renderItem={(props) => (
+                    <UserListItem element={props} onPress={onAssignUser} />
+                  )}
+                  contentContainerStyle={{ gap: 8 }}
+                />
+              ) : (
+                <Text style={styles.noUsersText}>No users found in this board</Text>
+              )}
             </View>
           </View>
         </BottomSheetModal>
+        <Toast />
       </View>
     </BottomSheetModalProvider>
   );
@@ -205,16 +305,59 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',
-    borderColor: '#fff',
+    borderColor: Colors.primary,
     borderWidth: 1,
+    backgroundColor: Colors.primary,
+    marginHorizontal: 16,
+    marginTop: 16,
   },
   btnText: {
     fontSize: 18,
+    color: '#fff',
+    fontWeight: '500',
   },
   bottomContainer: {
     backgroundColor: DefaultTheme.colors.background,
     flex: 1,
     gap: 16,
+  },
+  descriptionContainer: {
+    marginBottom: 16,
+  },
+  descriptionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+    paddingHorizontal: 8,
+  },
+  descButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 4,
+  },
+  saveButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  cancelButton: {
+    backgroundColor: Colors.grey,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontWeight: '500',
+    fontSize: 14,
+  },
+  cancelButtonText: {
+    color: '#fff',
+    fontWeight: '500',
+  },
+  noUsersText: {
+    textAlign: 'center',
+    padding: 16,
+    color: Colors.grey,
   },
 });
 export default Page;

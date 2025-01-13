@@ -5,6 +5,15 @@ import { Board, Task, TaskList } from '@/types/enums';
 import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { decode } from 'base64-arraybuffer'; // Add this import
+import { createClient } from '@supabase/supabase-js';
+
+interface User {
+  id: string;
+  email: string;
+  first_name: string;
+  username?: string;
+  avatar_url?: string;
+}
 
 export const BOARDS_TABLE = 'boards';
 export const USER_BOARDS_TABLE = 'user_boards';
@@ -37,7 +46,7 @@ export interface ProviderProps {
   assignCard: (cardId: string, userId: string) => Promise<any>;
   deleteCard: (id: string) => Promise<any>;
   getCardInfo: (id: string) => Promise<any>;
-  findUsers: (search: string) => Promise<any>;
+  findUsers: (boardId: string) => Promise<any>;
   addUserToBoard: (boardId: string, userId: string) => Promise<any>;
   getBoardMember: (boardId: string) => Promise<any>;
   getRealtimeCardSubscription: (
@@ -210,31 +219,23 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
     return data;
   };
 
-  const findUsers = async (search: string) => {
+  const findUsers = async (boardId: string) => {
     try {
-      // Fetch from Supabase with correct schema
-      const { data: supabaseUsers, error } = await client
-        .from(USERS_TABLE)
-        .select('id, email, first_name, username, avatar_url')
-        .or(`email.ilike.%${search}%,first_name.ilike.%${search}%,username.ilike.%${search}%`)
-        .order('first_name')
-        .limit(20);
-        
-      if (error) throw error;
+      const { data, error } = await client
+        .from(USER_BOARDS_TABLE)
+        .select('users ( id, email, first_name, username, avatar_url )')
+        .eq('board_id', boardId);
   
-      // Transform Supabase users to match the interface
-      const transformedUsers = (supabaseUsers || []).map(user => ({
-        id: user.id,
-        email: user.email || '',
-        full_name: user.first_name || '',
-        username: user.username || '',
-        avatar_url: user.avatar_url,
-        isClerkUser: false
-      }));
-      
-      return transformedUsers;
+      if (error) {
+        console.error('Error fetching board users:', error);
+        return [];
+      }
+  
+      // Extract users from the response
+      const users = data?.map(item => item.users).filter(Boolean);
+      return users || [];
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('Error in findUsers:', error);
       return [];
     }
   };
@@ -295,18 +296,23 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
   };
 
   const getUserCards = async (userId: string) => {
-    const { data, error } = await client
-      .from('cards')
-      .select('*, boards(*), lists(*)')
-      .eq('assigned_to', userId);
+    try {
+        const { data, error } = await client
+            .from('cards')
+            .select('*, boards(*), lists(*)')
+            .eq('assigned_to', userId);
 
-    if (error) {
-      console.error('Error fetching cards:', error);
-      return [];
+        if (error) {
+            console.error('Error fetching cards:', error);
+            return [];
+        }
+
+        return data || [];
+    } catch (error) {
+        console.error('Error processing cards:', error);
+        return [];
     }
-
-    return data || [];
-  };
+};
 
   const uploadFile = async (filePath: string, base64: string, contentType: string) => {
     const { data } = await client.storage
