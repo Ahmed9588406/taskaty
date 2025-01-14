@@ -1,3 +1,4 @@
+
 import { Ionicons } from '@expo/vector-icons';
 import { DefaultTheme } from '@react-navigation/native';
 import { Stack, useRouter } from 'expo-router';
@@ -38,7 +39,6 @@ const Layout = () => {
         options={{
           presentation: 'modal',
           title: 'Manage board members',
-          headerTitleAlign : 'center',
           headerLeft: () => (
             <TouchableOpacity
               onPress={() => router.back()}

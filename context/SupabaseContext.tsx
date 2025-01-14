@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { client } from '@/utils/supabaseClient';
 import { useAuth } from '@clerk/clerk-expo';
 import { Board, Task, TaskList } from '@/types/enums';
@@ -46,7 +46,7 @@ export interface ProviderProps {
   assignCard: (cardId: string, userId: string) => Promise<any>;
   deleteCard: (id: string) => Promise<any>;
   getCardInfo: (id: string) => Promise<any>;
-  findUsers: (boardId: string) => Promise<any>;
+  findUsers: (search: string) => Promise<any>;
   addUserToBoard: (boardId: string, userId: string) => Promise<any>;
   getBoardMember: (boardId: string) => Promise<any>;
   getRealtimeCardSubscription: (
@@ -67,11 +67,12 @@ export function useSupabase() {
 
 export const SupabaseProvider = ({ children }: { children: React.ReactNode }) => {
   const { userId: clerkUserId } = useAuth();
-  // Ensure userId is either string or null, not undefined
   const userId = clerkUserId ?? null;
+  const [allUsers, setAllUsers] = useState<User[]>([]);
 
   useEffect(() => {
     setRealtimeAuth();
+    fetchAllUsers();
   }, []);
 
   const setRealtimeAuth = async () => {
@@ -80,6 +81,23 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
     });
 
     client.realtime.setAuth(clerkToken!);
+  };
+
+  const fetchAllUsers = async () => {
+    try {
+      const { data, error } = await client
+        .from(USERS_TABLE)
+        .select('id, email, first_name, username, avatar_url');
+
+      if (error) {
+        console.error('Error fetching all users:', error);
+        return;
+      }
+
+      setAllUsers(data || []);
+    } catch (error) {
+      console.error('Error fetching all users:', error);
+    }
   };
 
   const createBoard = async (title: string, background: string) => {
@@ -219,21 +237,15 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
     return data;
   };
 
-  const findUsers = async (boardId: string) => {
+  const findUsers = async (search: string) => {
     try {
-      const { data, error } = await client
-        .from(USER_BOARDS_TABLE)
-        .select('users ( id, email, first_name, username, avatar_url )')
-        .eq('board_id', boardId);
-  
-      if (error) {
-        console.error('Error fetching board users:', error);
-        return [];
-      }
-  
-      // Extract users from the response
-      const users = data?.map(item => item.users).filter(Boolean);
-      return users || [];
+      const filteredUsers = allUsers.filter(user =>
+        user.email.toLowerCase().includes(search.toLowerCase()) ||
+        user.first_name.toLowerCase().includes(search.toLowerCase()) ||
+        (user.username && user.username.toLowerCase().includes(search.toLowerCase()))
+      );
+
+      return filteredUsers;
     } catch (error) {
       console.error('Error in findUsers:', error);
       return [];

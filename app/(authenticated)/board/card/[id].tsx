@@ -63,12 +63,10 @@ const Page = () => {
     const data = await getCardInfo!(id);
     console.log('🚀 ~ loadInfo ~ cardData:', data);
     setCard(data);
-    
-    // Set the boardId from the card data
+
     if (data?.board_id) {
       setBoardId(data.board_id);
-      // Fetch users specific to this board
-      const userData = await findUsers!(data.board_id);
+      const userData = await findUsers!('');
       setUsers(userData.filter(Boolean));
     }
   };
@@ -84,10 +82,11 @@ const Page = () => {
   };
 
   const onAssignUser = async (user: User) => {
-    const { data, error } = await assignCard!(card!.id, user.id);
-
-    setCard(data);
-    bottomSheetModalRef.current?.close();
+    const data = await assignCard!(card!.id, user.id);
+    if (data) {
+      setCard(data);
+      bottomSheetModalRef.current?.close();
+    }
   };
 
   const handleSaveDescription = async () => {
