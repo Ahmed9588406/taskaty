@@ -33,19 +33,8 @@ const Layout = () => {
           ),
         }}
       />
-      <Tabs.Screen
-        name="my-cards"
-        options={{
-          title: 'My Cards',
-          tabBarIcon: ({ size, color }) => (
-            <MaterialCommunityIcons
-              name="view-dashboard-variant-outline"
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
+      
+      
       
       <Tabs.Screen
         name="account"

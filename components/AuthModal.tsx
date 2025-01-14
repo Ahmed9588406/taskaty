@@ -4,6 +4,7 @@ import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { Image, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useWarmUpBrowser } from '@/hooks/useWarmUpBrowser';
 import { useOAuth, useSignIn, useSignUp } from '@clerk/clerk-expo';
+import { useRouter } from 'expo-router';
 
 const LOGIN_OPTIONS = [
   {
@@ -34,6 +35,7 @@ interface AuthModalProps {
 
 const AuthModal = ({ authType }: AuthModalProps) => {
   useWarmUpBrowser();
+  const router = useRouter();
   const { startOAuthFlow: googleAuth } = useOAuth({ strategy: AuthStrategy.Google });
   const { startOAuthFlow: microsoftAuth } = useOAuth({ strategy: AuthStrategy.Microsoft });
   const { startOAuthFlow: slackAuth } = useOAuth({ strategy: AuthStrategy.Slack });
@@ -97,9 +99,17 @@ const AuthModal = ({ authType }: AuthModalProps) => {
     }
   };
 
+  const handleEmailAuth = () => {
+    if (authType === ModalType.Login) {
+      router.push('/sign-in');
+    } else {
+      router.push('/sign-up');
+    }
+  };
+
   return (
     <BottomSheetView style={[styles.modalContainer]}>
-      <TouchableOpacity style={styles.modalBtn}>
+      <TouchableOpacity style={styles.modalBtn} onPress={handleEmailAuth}>
         <Ionicons name="mail-outline" size={20} />
         <Text style={styles.btnText}>
           {authType === ModalType.Login ? 'Log in' : 'Sign up'} with Email
