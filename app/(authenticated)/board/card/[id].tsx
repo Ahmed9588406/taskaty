@@ -43,6 +43,7 @@ const Page = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [tempDescription, setTempDescription] = useState('');
   const [boardId, setBoardId] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   if (card?.image_url) {
     getFileFromPath!(card.image_url).then((path) => {
@@ -143,6 +144,23 @@ const Page = () => {
       });
     }
   };
+
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+    const userData = await findUsers!(query);
+    setUsers(userData.filter(Boolean));
+  };
+
+  const renderUserItem = ({ item }: { item: User }) => (
+    <View style={styles.userRow}>
+      <Image source={{ uri: item.avatar_url }} style={styles.userAvatar} />
+      <View style={styles.userInfo}>
+        <Text style={styles.userName}>{item.first_name}</Text>
+        <Text style={styles.userEmail}>{item.email}</Text>
+      </View>
+      <Button title="Assign" onPress={() => onAssignUser(item)} />
+    </View>
+  );
 
   const renderBackdrop = useCallback(
     (props: any) => (
@@ -266,13 +284,17 @@ const Page = () => {
               <Button title="Cancel" onPress={() => bottomSheetModalRef.current?.close()} />
             </View>
             <View style={{ backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 8 }}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search users..."
+                value={searchQuery}
+                onChangeText={handleSearch}
+              />
               {users.length > 0 ? (
                 <FlatList
                   data={users}
                   keyExtractor={(item) => item.id.toString()}
-                  renderItem={(props) => (
-                    <UserListItem element={props} onPress={onAssignUser} />
-                  )}
+                  renderItem={renderUserItem}
                   contentContainerStyle={{ gap: 8 }}
                 />
               ) : (
@@ -357,6 +379,36 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     padding: 16,
     color: Colors.grey,
+  },
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  userAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  userEmail: {
+    fontSize: 14,
+    color: Colors.grey,
+  },
+  searchInput: {
+    padding: 8,
+    backgroundColor: '#f3f3f3',
+    borderRadius: 4,
+    marginBottom: 8,
   },
 });
 export default Page;

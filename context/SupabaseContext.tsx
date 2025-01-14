@@ -240,8 +240,8 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
   const findUsers = async (search: string) => {
     try {
       const filteredUsers = allUsers.filter(user =>
-        user.email.toLowerCase().includes(search.toLowerCase()) ||
-        user.first_name.toLowerCase().includes(search.toLowerCase()) ||
+        (user.email && user.email.toLowerCase().includes(search.toLowerCase())) ||
+        (user.first_name && user.first_name.toLowerCase().includes(search.toLowerCase())) ||
         (user.username && user.username.toLowerCase().includes(search.toLowerCase()))
       );
 
@@ -309,22 +309,22 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
 
   const getUserCards = async (userId: string) => {
     try {
-        const { data, error } = await client
-            .from('cards')
-            .select('*, boards(*), lists(*)')
-            .eq('assigned_to', userId);
+      const { data, error } = await client
+        .from('cards')
+        .select('*, boards(*), lists(*)')
+        .eq('assigned_to', userId);
 
-        if (error) {
-            console.error('Error fetching cards:', error);
-            return [];
-        }
-
-        return data || [];
-    } catch (error) {
-        console.error('Error processing cards:', error);
+      if (error) {
+        console.error('Error fetching cards:', error);
         return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error processing cards:', error);
+      return [];
     }
-};
+  };
 
   const uploadFile = async (filePath: string, base64: string, contentType: string) => {
     const { data } = await client.storage

@@ -1,8 +1,9 @@
 import { useSupabase } from '@/context/SupabaseContext';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { View, Text, FlatList, Image, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useState, useEffect } from 'react';
 import { DefaultTheme } from '@react-navigation/native';
+import { Colors } from '@/constants/Colors'; // Adjust the import path as necessary
 import { User } from '@/types/enums';
 import { useHeaderHeight } from '@react-navigation/elements';
 import UserListItem from '@/components/UserListItem';
@@ -46,6 +47,19 @@ const Page = () => {
     await router.dismiss();
   };
 
+  const renderUserItem = ({ item }: { item: User }) => (
+    <View style={styles.userRow}>
+      <Image source={{ uri: item.avatar_url }} style={styles.userAvatar} />
+      <View style={styles.userInfo}>
+        <Text style={styles.userName}>{item.first_name}</Text>
+        <Text style={styles.userEmail}>{item.email}</Text>
+      </View>
+      <TouchableOpacity style={styles.assignButton} onPress={() => onAddUser(item)}>
+        <Text style={styles.assignButtonText}>Assign</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <View style={{ flex: 1, padding: 8 }}>
       <Stack.Screen
@@ -68,13 +82,13 @@ const Page = () => {
       <FlatList
         data={userList}
         keyExtractor={(item) => `${item.id}`}
-        renderItem={(item) => <UserListItem onPress={onAddUser} element={item} />}
+        renderItem={renderUserItem}
         style={{ marginTop: 60 + headerHeight }}
         contentContainerStyle={{ gap: 8 }}
         ListEmptyComponent={
           search ? (
             <Text style={{ textAlign: 'center', marginTop: 20 }}>
-              {isLoading ? 'Searching...' : 'No users found'}
+              {isLoading ? <ActivityIndicator size="large" color={Colors.primary} /> : 'No users found'}
             </Text>
           ) : null
         }
@@ -82,4 +96,48 @@ const Page = () => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  userAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  userEmail: {
+    fontSize: 14,
+    color: Colors.grey,
+  },
+  assignButton: {
+    backgroundColor: Colors.primary,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+  },
+  assignButtonText: {
+    color: '#fff',
+    fontWeight: '500',
+  },
+});
+
 export default Page;
